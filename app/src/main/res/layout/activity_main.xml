@@ -31,6 +31,12 @@
             android:layout_height="wrap_content"
             android:layout_margin="10dp"
             android:text="发送"/>
+        <Button
+            android:id="@+id/mapButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:text="查看地图"/>
     </LinearLayout>
     <TextView
         android:id="@+id/ContentTextView"
