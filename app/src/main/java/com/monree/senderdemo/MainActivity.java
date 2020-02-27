@@ -89,10 +89,10 @@ public class MainActivity extends AppCompatActivity {
         mapBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String locationInfo = "纬度：23.241687\n" +
-                        "经度：116.002578\n" +
-                        "定位方式：网络";
-                //String locationInfo = ContentTv.getText().toString();
+//                String locationInfo = "纬度：23.241687\n" +
+//                        "经度：116.002578\n" +
+//                        "定位方式：网络";
+                String locationInfo = ContentTv.getText().toString();
                 //Intent intent = new Intent(MainActivity.this,MapActivity.class);
                 //startActivity(intent);
                 if(locationInfo.contains("纬度")){
@@ -182,7 +182,7 @@ public class MainActivity extends AppCompatActivity {
             SmsManager manager = SmsManager.getDefault();
             ArrayList<String> strings = manager.divideMessage(content);
             for (int i = 0; i < strings.size(); i++) {
-                manager.sendTextMessage(phone,"+8613010200500" , content, null, null);
+                manager.sendTextMessage(phone,null , content, null, null);
             }
             Toast.makeText(this, "发送成功", Toast.LENGTH_SHORT).show();
         } else {
