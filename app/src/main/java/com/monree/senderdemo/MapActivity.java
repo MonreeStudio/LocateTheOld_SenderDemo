@@ -6,10 +6,14 @@ import android.animation.TypeConverter;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
+import com.baidu.location.LocationClientOption;
+import com.baidu.mapapi.CoordType;
 import com.baidu.mapapi.SDKInitializer;
 import com.baidu.mapapi.map.BaiduMap;
 import com.baidu.mapapi.map.MapStatusUpdate;
@@ -17,6 +21,7 @@ import com.baidu.mapapi.map.MapStatusUpdateFactory;
 import com.baidu.mapapi.map.MapView;
 import com.baidu.mapapi.map.MyLocationData;
 import com.baidu.mapapi.model.LatLng;
+import com.baidu.mapapi.model.inner.GeoPoint;
 
 public class MapActivity extends AppCompatActivity {
 
@@ -30,19 +35,23 @@ public class MapActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         SDKInitializer.initialize(getApplicationContext());
+        SDKInitializer.setCoordType(CoordType.GCJ02);
         setContentView(R.layout.activity_map);
         mapView = findViewById(R.id.bmapView);
         locationTv = findViewById(R.id.locationTextView);
         baiduMap = mapView.getMap();
-        isFirstLocate = true;
+        baiduMap.setMyLocationEnabled(true);
         Intent intent = getIntent();
         String latitude = intent.getStringExtra("latitude_data");
         String longitude = intent.getStringExtra("longitude_data");
         lat = Double.valueOf(latitude).doubleValue();
         lon = Double.valueOf(longitude).doubleValue();
+        CoordinateBean cdb = new PositionConvertUtil().wgs84ToGcj02(lat,lon);
+        lat = cdb.getLatitude();
+        lon = cdb.getLongitude();
         locationTv.setText(lat+"\n"+lon);
+        locationTv.setText(SDKInitializer.getCoordType()+"");
 
-        MyLocationListener myLocationListener = new MyLocationListener();
         LatLng ll = new LatLng(lat,lon);
         MapStatusUpdate update = MapStatusUpdateFactory.newLatLng(ll);
         baiduMap.animateMapStatus(update);
@@ -52,9 +61,13 @@ public class MapActivity extends AppCompatActivity {
         MyLocationData.Builder locationBuilder = new MyLocationData.Builder();
         locationBuilder.latitude(lat);
         locationBuilder.longitude(lon);
+
         MyLocationData locationData = locationBuilder.build();
         baiduMap.setMyLocationData(locationData);
     }
+
+
+
 
     private void navigateTo(BDLocation location){
         if(isFirstLocate){
@@ -66,8 +79,10 @@ public class MapActivity extends AppCompatActivity {
             isFirstLocate = false;
         }
         MyLocationData.Builder locationBuilder = new MyLocationData.Builder();
-        locationBuilder.latitude(location.getLatitude());
-        locationBuilder.longitude(location.getLongitude());
+//        locationBuilder.latitude(location.getLatitude());
+//        locationBuilder.longitude(location.getLongitude());
+        locationBuilder.latitude(lat);
+        locationBuilder.longitude(lon);
         MyLocationData locationData = locationBuilder.build();
         baiduMap.setMyLocationData(locationData);
     }

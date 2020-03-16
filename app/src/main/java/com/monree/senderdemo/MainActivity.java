@@ -1,5 +1,6 @@
 package com.monree.senderdemo;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -11,6 +12,8 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.pm.PackageManager;
+import android.location.Location;
+import android.location.LocationListener;
 import android.location.LocationManager;
 import android.net.Uri;
 import android.os.Build;
@@ -37,10 +40,12 @@ public class MainActivity extends AppCompatActivity {
     EditText messageCnt;
     Button sendBtn;
     Button mapBtn;
+    Button locBtn;
     Context context;
     IntentFilter filter;
     SmsReceiver receiver;
     TextView ContentTv;
+    String locationInfo;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,7 +60,44 @@ public class MainActivity extends AppCompatActivity {
         messageCnt = findViewById(R.id.messageContent);
         sendBtn = findViewById(R.id.sendButton);
         mapBtn = findViewById(R.id.mapButton);
+        locBtn = findViewById(R.id.getLoctionButton);
         ContentTv = findViewById(R.id.ContentTextView);
+        locationInfo = "";
+        List<String> permissionList = new ArrayList<>();
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.ACCESS_FINE_LOCATION);
+        }
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.READ_PHONE_STATE)
+                != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.READ_PHONE_STATE);
+        }
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                != PackageManager.PERMISSION_GRANTED) {
+            permissionList.add(Manifest.permission.WRITE_EXTERNAL_STORAGE);
+        }
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.SEND_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            //ActivityCompat.requestPermissions(MainActivity.this, new String[]{Manifest.permission.SEND_SMS},1);
+            permissionList.add(Manifest.permission.SEND_SMS);
+        }
+        if (ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.RECEIVE_SMS)
+                != PackageManager.PERMISSION_GRANTED) {
+            //ActivityCompat.requestPermissions(MainActivity.this,new String[]{Manifest.permission.RECEIVE_SMS},2);
+            permissionList.add(Manifest.permission.RECEIVE_SMS);
+        }
+        if(ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED){
+            permissionList.add(Manifest.permission.ACCESS_COARSE_LOCATION);
+        }
+        if (!permissionList.isEmpty()) {
+            String[] permissions = permissionList.toArray(new String[permissionList.size()]);
+            ActivityCompat.requestPermissions(MainActivity.this, permissions, 1);
+        } else {
+
+        }
+
+
         sendBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -109,7 +151,102 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
+        locBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                List<String> list = getLngAndLat(context);
+                locationInfo = list.get(1)+list.get(2)+list.get(0);
+                ContentTv.setText(locationInfo);
+            }
+        });
     }
+
+    private List<String> getLngAndLat(Context context) {
+        List<String> list = new ArrayList<>();
+        double latitude = 0;
+        double longitude = 0;
+        LocationManager locationManager = (LocationManager) context.getSystemService(Context.LOCATION_SERVICE);
+        if (locationManager.isProviderEnabled(LocationManager.GPS_PROVIDER)) {  //从gps获取经纬度
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)
+                    != PackageManager.PERMISSION_GRANTED
+                    &&
+                    ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION)
+                            != PackageManager.PERMISSION_GRANTED) {
+                return new ArrayList<>();
+            }
+            Location location = locationManager.getLastKnownLocation(LocationManager.GPS_PROVIDER);
+            if (location != null) {
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+                list.add("定位方式：GPS");
+            } else {//当GPS信号弱没获取到位置的时候又从网络获取
+                return getLngAndLatWithNetwork();
+            }
+        } else {    //从网络获取经纬度
+            if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+                return new ArrayList<>();
+            }
+            locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0, locationListener);
+            Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+            if (location != null) {
+                latitude = location.getLatitude();
+                longitude = location.getLongitude();
+                list.add("定位方式：网络");
+            }
+        }
+        list.add("纬度：" + latitude +'\n');
+        list.add("经度：" + longitude+"\n");
+        return list;
+    }
+
+    //从网络获取经纬度
+    public List<String> getLngAndLatWithNetwork() {
+        List<String> list = new ArrayList<>();
+        list.add("定位方式：网络");
+        double latitude = 0.0;
+        double longitude = 0.0;
+        LocationManager locationManager = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            return new ArrayList<>();
+        }
+        locationManager.requestLocationUpdates(LocationManager.NETWORK_PROVIDER, 1000, 0, locationListener);
+        Location location = locationManager.getLastKnownLocation(LocationManager.NETWORK_PROVIDER);
+        if (location != null) {
+            latitude = location.getLatitude();
+            longitude = location.getLongitude();
+        }
+        list.add("纬度：" + latitude +'\n');
+        list.add("经度：" + longitude+"\n");
+        return list;
+    }
+
+    private final LocationListener locationListener = new LocationListener() {
+
+        @Override
+        public void onLocationChanged(Location location) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void onProviderDisabled(String arg0) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void onProviderEnabled(String arg0) {
+            // TODO Auto-generated method stub
+
+        }
+
+        @Override
+        public void onStatusChanged(String arg0, int arg1, Bundle arg2) {
+            // TODO Auto-generated method stub
+
+        }
+
+    };
 
     @Override
     protected void onDestroy() {
@@ -208,23 +345,26 @@ public class MainActivity extends AppCompatActivity {
     }
 
     @Override
-    public void onRequestPermissionsResult(int requestCode,String[] permissions,int[] grantResults){
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        //super.onRequestPermissionsResult(requestCode, permissions, grantResults);
         switch (requestCode){
             case 1:
-                if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED){
-                    sendSMSS();
+                if(grantResults.length > 0){
+                    for(int result : grantResults){
+                        if(result != PackageManager.PERMISSION_GRANTED){
+                            Toast.makeText(this,"必须同意所有权限才能使用本程序",Toast.LENGTH_SHORT).show();
+                            finish();
+                            return;
+                        }
+                    }
+                    //requestLocation();
                 }
                 else {
-                    Toast.makeText(this,"你取消了授权",Toast.LENGTH_SHORT).show();
-                }
-            case 2:
-                if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    //这里写操作 如send（）； send函数中New SendMsg （号码，内容）；
-                } else {
-                    Toast.makeText(this, "你取消了授权", Toast.LENGTH_SHORT).show();
+                    Toast.makeText(this,"发生未知错误",Toast.LENGTH_SHORT).show();
+                    finish();
                 }
                 break;
-                default:
+            default:
         }
     }
 

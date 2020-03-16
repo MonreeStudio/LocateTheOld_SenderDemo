@@ -32,6 +32,12 @@
             android:layout_margin="10dp"
             android:text="发送"/>
         <Button
+            android:id="@+id/getLoctionButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_margin="10dp"
+            android:text="获取位置"/>
+        <Button
             android:id="@+id/mapButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
